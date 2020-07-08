@@ -1,8 +1,10 @@
 package cn.zp.kafka;
 
 import org.apache.kafka.clients.producer.*;
+import org.json.JSONObject;
 
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -13,6 +15,47 @@ import java.util.concurrent.ExecutionException;
 public class ProducerTest {
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
+        Producer<String, String> producer = createProducer();
+
+        JSONObject order = createOrder();
+
+        ProducerRecord<String, String> send = new ProducerRecord<String, String>("topicA", order.getString("orderId"), order.toString());
+         //异步发送消息
+        producer.send(send, new Callback() {
+
+            public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+                if (e == null) {
+
+                    //消息发送成功
+                } else {
+                    //消息发送失败
+                }
+
+            }
+        });
+
+        //同步发送消息
+        producer.send(send).get();
+
+        producer.close();
+    }
+
+
+    private static JSONObject createOrder() {
+        JSONObject order = new JSONObject();
+        order.put("orderId", 63988);
+        order.put("orderNo", UUID.randomUUID().toString());
+        order.put("userId", 1147);
+        order.put("productId", 380);
+        order.put("purchaseCount", 2);
+        order.put("productPrice", 50.0);
+        order.put("totalAmount", 100.0);
+        order.put("_OPERATION_", "PAY");
+        return order;
+    }
+
+
+    public static Producer<String,String> createProducer(){
         Properties properties = new Properties();
         //设置Broker地址 拉取元数据
         properties.put("bootstrap.servers", "127.0.0.1:9092");
@@ -38,25 +81,7 @@ public class ProducerTest {
 
 
         Producer<String, String> producer = new KafkaProducer<String, String>(properties);
+        return producer;
 
-        ProducerRecord<String, String> send = new ProducerRecord<String, String>("topicA", "key", "value");
-         //异步发送消息
-        producer.send(send, new Callback() {
-
-            public void onCompletion(RecordMetadata recordMetadata, Exception e) {
-                if (e == null) {
-
-                    //消息发送成功
-                } else {
-                    //消息发送失败
-                }
-
-            }
-        });
-
-        //同步发送消息
-        producer.send(send).get();
-
-        producer.close();
     }
 }
